@@ -66,7 +66,7 @@ $ docker push ldynia/k8s:latest
 
 # Virtual Cluster - VirtualBox
 
-## Setup TLS keys
+## Setup TLS
 
 ```bash
 $ ssh-keygen -t rsa -b 4096 -N ''
@@ -76,7 +76,7 @@ $ ls -l ~/.ssh
 -rw-r--r-- 1 user user 1776 Jan 27 10:25 known_hosts
 ```
 
-## Setting vCluster with Vagrant
+## Setting vCluster - Vagrant
 
 ```bash
 $ cd ~/k8workshop
@@ -88,7 +88,7 @@ $ vagrant status
 $ vagrant ssh master
 ```
 
-## Provisioning Cluster With Ansible
+## Provisioning vCluster - Ansible
 
 Add IPs of virtual cluster to `/etc/hosts`
 
@@ -143,7 +143,6 @@ $ ansible-playbook playbook-kubernetes.yml
 ```
 
 # Kubernetes
-
 
 ## docker vs kubernetes; container vs pod
 

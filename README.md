@@ -20,7 +20,7 @@ At the moment of writing Kubernetes is 6 years old. It originated from Google's 
 
 ## Application Flow
 
-![app lifecycle](https://github.com/ldynia/k8s-workshop/raw/master/img/flow.png)
+![app lifecycle](https://raw.githubusercontent.com/ldynia/k8s-workshop/master/img/flow.png)
 
 ## Architecture
 
@@ -28,7 +28,7 @@ At the moment of writing Kubernetes is 6 years old. It originated from Google's 
 
 ## Constructs
 
-![kubernetes constructs](https://github.com/ldynia/k8s-workshop/raw/master/img/pyramid.png)
+![kubernetes constructs](https://raw.githubusercontent.com/ldynia/k8s-workshop/master/img/pyramid.png)
 
 # Application - Flask
 

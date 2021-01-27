@@ -16,9 +16,15 @@ Requirements
 
 At the moment of writing Kubernetes is 6 years old. It originated from Google's **7th** Project [Borg](https://www.gcppodcast.com/post/episode-46-borg-and-k8s-with-john-wilkes/) and name was inspired by Star Trek's [Ex-Borg](https://en.wikipedia.org/wiki/Seven_of_Nine).
 
-# Kubernetes Architecture
+# Kubernetes
+
+## Architecture
 
 ![Architecture](https://miro.medium.com/max/2400/1*HXbT0c4Q5XaiCIp6y3VMvw.png)
+
+## Constructs
+
+![kubernetes constructs](https://github.com/ldynia/k8s-workshop/raw/master/img/pyramid.png)
 
 # Application - Flask
 
@@ -138,7 +144,6 @@ $ ansible-playbook playbook-kubernetes.yml
 
 # Kubernetes
 
-![kubernetes constructs](https://github.com/ldynia/k8s-workshop/raw/master/img/pyramid.png)
 
 ## docker vs kubernetes; container vs pod
 

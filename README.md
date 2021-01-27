@@ -18,7 +18,7 @@ At the moment of writing Kubernetes is 6 years old. It originated from Google's 
 
 # Kubernetes Architecture
 
-![Architecture](https://raw.githubusercontent.com/ldynia/k8s-workshop/master/img/pyramid.png)
+![Architecture](https://miro.medium.com/max/2400/1*HXbT0c4Q5XaiCIp6y3VMvw.png)
 
 # Application - Flask
 

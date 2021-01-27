@@ -18,9 +18,13 @@ At the moment of writing Kubernetes is 6 years old. It originated from Google's 
 
 # Kubernetes
 
+## Application Flow
+
+![app lifecycle](https://github.com/ldynia/k8s-workshop/raw/master/img/flow.png)
+
 ## Architecture
 
-![Architecture](https://miro.medium.com/max/2400/1*HXbT0c4Q5XaiCIp6y3VMvw.png)
+![architecture](https://miro.medium.com/max/2400/1*HXbT0c4Q5XaiCIp6y3VMvw.png)
 
 ## Constructs
 

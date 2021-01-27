@@ -49,7 +49,6 @@ $ docker exec flask-k8s-app hostname
 $ docker exec flask-k8s-app flask routes
 ```
 
-
 ## Building application
 
 ```bash
@@ -94,10 +93,9 @@ $ vagrant ssh master
 
 ## Provisioning vCluster - Ansible
 
-Add IPs of virtual cluster to `/etc/hosts`
+Add IPs of cluster nodes to `/etc/hosts`
 
 ```
-# /etc/hosts
 192.168.234.200 k8client
 192.168.234.230 k8master
 192.168.234.231 k8worker1
@@ -148,7 +146,19 @@ $ ansible-playbook playbook-kubernetes.yml
 
 # Kubernetes
 
-## docker vs kubernetes; container vs pod
+## Namespaces
+
+```bash
+$ docker run --name c1 busybox sleep 1d
+$ docker run --name c2 busybox sleep 1d
+$ docker exec c1 ps
+$ docker exec c2 ps
+$ ps aux | grep sleep
+$ docker rm c2
+$ docker run --name c2 --pid container:c1 busybox sleep 1d
+```
+
+## Docker vs Kubernetes; Container vs Pod
 
 Container
 
@@ -167,13 +177,161 @@ $ kubectl exec -it alpinus -- ash
 ```
 
 Inspecting Pods
-```
+
+```bash
 $ kubectl get pods
 $ kubectl describe pods alpinus
 $ kubectl get pods alpinus -o yaml
 $ kubectl get pods alpinus -o yaml > alpinus.pod.yaml
 $ kubectl delete pod alpinus
 $ kubectl apply -f alpinus.pod.yaml
+```
+
+# Sets
+
+Manages the deployment and scaling of a Pod
+
+## Daemon Set
+
+A Daemon Set ensures that all (or some) Nodes run a copy of one Pod. 
+
+As nodes are added to the cluster, Pod is added to them. As nodes are removed from the cluster, Pod is garbage collected.
+
+```yaml
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: fluentd-elasticsearch
+  labels:
+    k8s-app: fluentd-logging
+spec:
+  selector:
+    matchLabels:
+      name: fluentd-elasticsearch
+  template:
+    metadata:
+      labels:
+        name: fluentd-elasticsearch
+    spec:
+      #tolerations:
+      #- key: node-role.kubernetes.io/master
+      #  effect: NoSchedule
+      containers:
+      - name: fluentd-elasticsearch
+        image: quay.io/fluentd_elasticsearch/fluentd:v2.5.2
+```
+
+## Stateful Set
+
+Stateful Set provides guarantees about the **ordering** and **uniqueness** of Pods, by maintains a sticky identity for each of its Pods. Pods in Stateful Set are not interchangeable: each has a persistent identifier that it maintains across any rescheduling.
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-ss
+  labels:
+    app: nginx
+spec:
+  ports:
+  - port: 80
+    name: web
+  clusterIP: None
+  selector:
+    app: nginx
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: web-ss
+spec:
+  selector:
+    matchLabels:
+      app: nss
+  serviceName: nginx-ss
+  replicas: 3
+  template:
+    metadata:
+      labels:
+        app: nss
+    spec:
+      containers:
+      - name: nginx
+        image: k8s.gcr.io/nginx-slim:0.8
+        ports:
+        - containerPort: 80
+          name: web
+```
+
+```bash
+$ kubectl get pods -l app=nss
+$ kubectl exec web-0 -- hostname
+$ kubectl exec web-0 -- curl web-0.nginx.default.svc.cluster.local
+```
+
+## Replica Set
+
+Purpose of ReplicaSet is to maintain a stable set of replica Pods running at any given time.
+
+```yaml
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: demo-rs
+  labels:
+    run: drs
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      run: drs
+  template:
+    metadata:
+      labels:
+        run: drs
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:latest
+```
+
+# Deployment
+
+Deployment is a higher-level concept that manages ReplicaSets and provides declarative updates to Pods and ReplicaSets. 
+
+You describe a desired state of an application in a Deployment, and the Deployment Controller changes current state to the desired state at a controlled rate.
+
+**It's recommend using Deployments instead of ReplicaSets, unless you require custom update orchestration or don't require updates at all.**
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  labels:
+    app: nginx
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+        ports:
+        - containerPort: 80
+```
+
+```bash
+$ kubectl set image deployment/nginx-deployment nginx=nginx:1.16.1 --record
+$ kubectl rollout status deployment nginx-deployment 
+$ kubectl rollout history deployment nginx-deployment 
+$ kubectl rollout undo deployment.v1.apps/nginx-deployment --to-revision=1
 ```
 
 ## HA Redis

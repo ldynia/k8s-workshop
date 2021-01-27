@@ -138,7 +138,7 @@ $ ansible-playbook playbook-kubernetes.yml
 
 # Kubernetes
 
-![kubernetes constructs](./img/pyramid.jpg)
+![kubernetes constructs](https://github.com/ldynia/k8s-workshop/raw/master/img/pyramid.png)
 
 ## docker vs kubernetes; container vs pod
 

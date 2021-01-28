@@ -52,8 +52,10 @@ $ docker exec flask-k8s-app flask routes
 ## Building application
 
 ```bash
-$ cd app
-$ docker build --tag ldynia/k8s:latest --file ../docker/Dockerfile --build-arg APP_COLOR=green .
+$ cd ~/k8workshop/flask-k8s/app/
+$ docker build --tag ldynia/k8s:latest --file ../docker/Dockerfile --build-arg APP_COLOR=red .
+$ docker build --tag ldynia/k8s:v1 --file ../docker/Dockerfile --build-arg APP_COLOR=green .
+$ docker build --tag ldynia/k8s:v2 --file ../docker/Dockerfile --build-arg APP_COLOR=blue .
 
 $ docker images | grep ldynia
 
@@ -65,6 +67,8 @@ $ docker run -d ldynia/k8s:latest
 ```bash
 $ docker login
 $ docker push ldynia/k8s:latest
+$ docker push ldynia/k8s:v1
+$ docker push ldynia/k8s:v2
 ```
 
 # Virtual Cluster - VirtualBox
@@ -193,7 +197,7 @@ Manages the deployment and scaling of a Pod
 
 ## Daemon Set
 
-A Daemon Set ensures that all (or some) Nodes run a copy of one Pod. 
+A Daemon Set ensures that all (or some) Nodes run a copy of one Pod.
 
 As nodes are added to the cluster, Pod is added to them. As nodes are removed from the cluster, Pod is garbage collected.
 
@@ -297,41 +301,94 @@ spec:
 
 # Deployment
 
-Deployment is a higher-level concept that manages ReplicaSets and provides declarative updates to Pods and ReplicaSets. 
+Deployment is a higher-level concept that manages ReplicaSets and provides declarative updates to Pods and ReplicaSets.
 
 You describe a desired state of an application in a Deployment, and the Deployment Controller changes current state to the desired state at a controlled rate.
 
 **It's recommend using Deployments instead of ReplicaSets, unless you require custom update orchestration or don't require updates at all.**
 
+## Setup
+
+```bash
+{
+  kubectl run app-green --image=ldynia/k8s:latest
+  kubectl run app-red --image=ldynia/k8s:v1
+  kubectl run app-blue --image=ldynia/k8s:v2
+}
+
+$ kubectl get pods -o=custom-columns='NAME:metadata.name,IMAGE:spec.containers[*].image,IP:status.podIP,STATUS:status.phase'
+
+{
+   kubectl delete pod app-red --force
+   kubectl delete pod app-green --force
+   kubectl delete pod app-blue --force
+}
+```
+
+## Rollout
+
+```bash
+$ kubectl create deployment app --image ldynia/k8s:latest
+
+$ kubectl set image deployment/app k8s=ldynia/k8s:v1 --record
+$ kubectl set image deployment/app k8s=ldynia/k8s:v2 --record
+
+$ kubectl rollout history deployment app
+
+$ kubectl rollout undo deployment app --to-revision 2
+$ kubectl rollout undo deployment app --to-revision 1
+```
+
+## Vertical Pod Autoscaling
+
 ```yaml
+# app.deploy.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: nginx-deployment
   labels:
-    app: nginx
+    app: app
+  name: app
 spec:
-  replicas: 3
+  replicas: 1
   selector:
     matchLabels:
-      app: nginx
+      app: app
   template:
     metadata:
       labels:
-        app: nginx
+        app: app
     spec:
       containers:
-      - name: nginx
-        image: nginx:1.14.2
-        ports:
-        - containerPort: 80
+      - image: ldynia/k8s:latest
+        imagePullPolicy: Always
+        name: k8s
+        resources:
+          requests:
+            memory: "32Mi"
+            cpu: "250m"
+          limits:
+            memory: "64Mi"
+            cpu: "500m"
 ```
 
 ```bash
-$ kubectl set image deployment/nginx-deployment nginx=nginx:1.16.1 --record
-$ kubectl rollout status deployment nginx-deployment 
-$ kubectl rollout history deployment nginx-deployment 
-$ kubectl rollout undo deployment.v1.apps/nginx-deployment --to-revision=1
+$ kubectl apply -f app.deploy.yaml
+$ kubectl edit deployment app --record
+$ kubectl describe deployments.apps app
+```
+
+## Horizontal Pods Autoscalar
+
+```bash
+$ kubectl scale deployment app --replicas 6
+$ kubectl scale deployment app --replicas 1
+```
+
+## Automatic Horizontal Pods Autoscaling
+
+```bash
+$ kubectl autoscale deployment app --max=6 --min=3 --cpu-percent=80
 ```
 
 ## HA Redis

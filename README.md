@@ -53,9 +53,9 @@ $ docker exec flask-k8s-app flask routes
 
 ```bash
 $ cd ~/k8workshop/flask-k8s/app/
-$ docker build --tag ldynia/k8s:latest --file ../docker/Dockerfile --build-arg APP_COLOR=red .
-$ docker build --tag ldynia/k8s:v1 --file ../docker/Dockerfile --build-arg APP_COLOR=green .
-$ docker build --tag ldynia/k8s:v2 --file ../docker/Dockerfile --build-arg APP_COLOR=blue .
+$ docker build --tag ldynia/k8s:latest --file docker/Dockerfile --build-arg APP_COLOR=red .
+$ docker build --tag ldynia/k8s:v1 --file docker/Dockerfile --build-arg APP_COLOR=green .
+$ docker build --tag ldynia/k8s:v2 --file docker/Dockerfile --build-arg APP_COLOR=blue .
 
 $ docker images | grep ldynia
 
@@ -391,7 +391,84 @@ $ kubectl scale deployment app --replicas 1
 $ kubectl autoscale deployment app --max=6 --min=3 --cpu-percent=80
 ```
 
+## Services
+
+```bash
+$ kubectl create deployment app-blue --image=ldynia/k8s:v1
+$ kubectl create deployment app-green --image=ldynia/k8s:v1
+
+$ kubectl expose deployment app-blue --port 80 --target-port 8080
+$ kubectl expose deployment app-green --port 80 --target-port 8080
+
+$ kubectl get svc
+NAME         TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)   AGE
+app-green    ClusterIP   10.101.207.148   <none>        80/TCP    2m25s
+```
+
+### Load Balancing
+
+```bash
+$ kubectl scale deployment app-blue --replicas=2
+$ kubectl scale deployment app-green --replicas=2
+
+$ for ((i=1;i<=10;i++)); do curl "10.101.207.148/app"; done
+```
+
+
+## Ingress
+
+```bash
+$ cat /etc/hosts
+
+192.168.234.231 blue.green.com
+192.168.234.232 blue.green.com
+
+192.168.234.200 k8client
+192.168.234.230 k8master
+192.168.234.231 k8worker1
+192.168.234.232 k8worker2
+192.168.234.233 k8worker3
+```
+
+```bash
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: app-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /app
+spec:
+  rules:
+  - host: blue.green.com
+    http:
+      paths:
+      - path: /blue
+        backend:
+          serviceName: app-blue
+          servicePort: 80
+      - path: /green
+        backend:
+          serviceName: app-green
+          servicePort: 80
+```
+
+```bash
+$ kubectl get svc -n ingress-nginx
+NAME                                 TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)                      AGE
+ingress-nginx-controller             NodePort    10.105.9.184     <none>        80:31482/TCP,443:30417/TCP   2m33s
+ingress-nginx-controller-admission   ClusterIP   10.109.167.240   <none>        443/TCP                      2m33s
+
+$ kubectl get ingress
+NAME          CLASS    HOSTS            ADDRESS           PORTS   AGE
+app-ingress   <none>   blue.green.com   192.168.234.231   80      2m10s
+
+$ curl blue.green.com:31482/blue
+$ curl blue.green.com:31482/green
+```
+
 ## HA Redis
+
+TODO: Create PV for HA redis
 
 ```bash
 $ helm repo add stable https://charts.helm.sh/stable

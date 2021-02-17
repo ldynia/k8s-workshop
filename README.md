@@ -9,7 +9,7 @@ Requirements
 * [Docker](https://docs.docker.com/)
 * [Docker-Comose](https://docs.docker.com/compose/install/)
 * [Docker Hub Account](https://hub.docker.com/)
-* [Appllication](https://github.com/ldynia/flask-k8s)
+* [Appllication](https://github.com/ldynia/flask-k8s-app)
 * [Virtual Kubernetes Cluster](https://github.com/ldynia/vagrant-vlab)
 
 # History
@@ -38,8 +38,8 @@ At the moment of writing Kubernetes is 6 years old. It originated from Google's 
 $ cd ~
 $ mkdir k8workshop
 $ cd k8workshop
-$ git clone git@github.com:ldynia/flask-k8s.git
-$ cd flask-k8s/
+$ git clone git@github.com:ldynia/flask-k8s-app.git
+$ cd flask-k8s-app/
 
 $ docker-compose build
 $ docker-compose up
@@ -52,23 +52,23 @@ $ docker exec flask-k8s-app flask routes
 ## Building application
 
 ```bash
-$ cd ~/k8workshop/flask-k8s/app/
-$ docker build --tag ldynia/k8s:latest --file docker/Dockerfile --build-arg APP_COLOR=red .
-$ docker build --tag ldynia/k8s:v1 --file docker/Dockerfile --build-arg APP_COLOR=green .
-$ docker build --tag ldynia/k8s:v2 --file docker/Dockerfile --build-arg APP_COLOR=blue .
+$ cd ~/k8workshop/flask-k8s-app/app/
+$ docker build --tag ldynia/k8s-app:latest --file docker/Dockerfile --build-arg APP_COLOR=red ./app
+$ docker build --tag ldynia/k8s-app:v1 --file docker/Dockerfile --build-arg APP_COLOR=green ./app
+$ docker build --tag ldynia/k8s-app:v2 --file docker/Dockerfile --build-arg APP_COLOR=blue ./app
 
 $ docker images | grep ldynia
 
-$ docker run -d ldynia/k8s:latest
+$ docker run -d ldynia/k8s-app:latest
 ```
 
 ## Distributing application to public Registry
 
 ```bash
 $ docker login
-$ docker push ldynia/k8s:latest
-$ docker push ldynia/k8s:v1
-$ docker push ldynia/k8s:v2
+$ docker push ldynia/k8s-app:latest
+$ docker push ldynia/k8s-app:v1
+$ docker push ldynia/k8s-app:v2
 ```
 
 # Virtual Cluster - VirtualBox
@@ -311,9 +311,9 @@ You describe a desired state of an application in a Deployment, and the Deployme
 
 ```bash
 {
-  kubectl run app-green --image=ldynia/k8s:latest
-  kubectl run app-red --image=ldynia/k8s:v1
-  kubectl run app-blue --image=ldynia/k8s:v2
+  kubectl run app-green --image=ldynia/k8s-app:latest
+  kubectl run app-red --image=ldynia/k8s-app:v1
+  kubectl run app-blue --image=ldynia/k8s-app:v2
 }
 
 $ kubectl get pods -o=custom-columns='NAME:metadata.name,IMAGE:spec.containers[*].image,IP:status.podIP,STATUS:status.phase'
@@ -328,10 +328,10 @@ $ kubectl get pods -o=custom-columns='NAME:metadata.name,IMAGE:spec.containers[*
 ## Rollout
 
 ```bash
-$ kubectl create deployment app --image ldynia/k8s:latest
+$ kubectl create deployment app --image ldynia/k8s-app:latest
 
-$ kubectl set image deployment/app k8s=ldynia/k8s:v1 --record
-$ kubectl set image deployment/app k8s=ldynia/k8s:v2 --record
+$ kubectl set image deployment/app k8s=ldynia/k8s-app:v1 --record
+$ kubectl set image deployment/app k8s=ldynia/k8s-app:v2 --record
 
 $ kubectl rollout history deployment app
 
@@ -360,7 +360,7 @@ spec:
         app: app
     spec:
       containers:
-      - image: ldynia/k8s:latest
+      - image: ldynia/k8s-app:latest
         imagePullPolicy: Always
         name: k8s
         resources:
@@ -394,15 +394,16 @@ $ kubectl autoscale deployment app --max=6 --min=3 --cpu-percent=80
 ## Services
 
 ```bash
-$ kubectl create deployment app-blue --image=ldynia/k8s:v1
-$ kubectl create deployment app-green --image=ldynia/k8s:v1
+$ kubectl create deployment app-green --image=ldynia/k8s-app:v1
+$ kubectl create deployment app-blue --image=ldynia/k8s-app:v2
 
-$ kubectl expose deployment app-blue --port 80 --target-port 8080
 $ kubectl expose deployment app-green --port 80 --target-port 8080
+$ kubectl expose deployment app-blue --port 80 --target-port 8080
 
 $ kubectl get svc
 NAME         TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)   AGE
-app-green    ClusterIP   10.101.207.148   <none>        80/TCP    2m25s
+app-blue     ClusterIP   10.97.54.12      <none>        80/TCP    63m
+app-green    ClusterIP   10.101.207.148   <none>        80/TCP    131m
 ```
 
 ### Load Balancing

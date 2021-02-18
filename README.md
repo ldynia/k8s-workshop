@@ -51,8 +51,10 @@ $ docker exec flask-k8s-app flask routes
 
 ## Building application
 
+**Remember to change dockerhub username** from `ldynia` to `your_dockerhub_username`
+
 ```bash
-$ cd ~/k8workshop/flask-k8s-app/app/
+$ cd ~/k8workshop/flask-k8s-app/
 $ docker build --tag ldynia/k8s-app:latest --file docker/Dockerfile --build-arg APP_COLOR=red ./app
 $ docker build --tag ldynia/k8s-app:v1 --file docker/Dockerfile --build-arg APP_COLOR=green ./app
 $ docker build --tag ldynia/k8s-app:v2 --file docker/Dockerfile --build-arg APP_COLOR=blue ./app
@@ -150,11 +152,13 @@ $ ansible-playbook playbook-kubernetes.yml
 
 # Kubernetes
 
+[kubernetes playground](https://www.katacoda.com/courses/kubernetes/playground)
+
 ## Namespaces
 
 ```bash
-$ docker run --name c1 busybox sleep 1d
-$ docker run --name c2 busybox sleep 1d
+$ docker run --name c1 -d busybox sleep 1d
+$ docker run --name c2 -d busybox sleep 1d
 $ docker exec c1 ps
 $ docker exec c2 ps
 $ ps aux | grep sleep
@@ -269,8 +273,8 @@ spec:
 
 ```bash
 $ kubectl get pods -l app=nss
-$ kubectl exec web-0 -- hostname
-$ kubectl exec web-0 -- curl web-0.nginx.default.svc.cluster.local
+$ kubectl exec web-ss-0 -- hostname
+$ kubectl exec web-ss-0 -- curl web-ss-0.nginx.default.svc.cluster.local
 ```
 
 ## Replica Set
@@ -330,8 +334,8 @@ $ kubectl get pods -o=custom-columns='NAME:metadata.name,IMAGE:spec.containers[*
 ```bash
 $ kubectl create deployment app --image ldynia/k8s-app:latest
 
-$ kubectl set image deployment/app k8s=ldynia/k8s-app:v1 --record
-$ kubectl set image deployment/app k8s=ldynia/k8s-app:v2 --record
+$ kubectl set image deployment/app k8s-app=ldynia/k8s-app:v1 --record
+$ kubectl set image deployment/app k8s-app=ldynia/k8s-app:v2 --record
 
 $ kubectl rollout history deployment app
 
@@ -466,6 +470,44 @@ app-ingress   <none>   blue.green.com   192.168.234.231   80      2m10s
 $ curl blue.green.com:31482/blue
 $ curl blue.green.com:31482/green
 ```
+
+## Probes
+
+Deployment
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app2
+  labels:
+    app: app2
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: app2
+  template:
+    metadata:
+      labels:
+        app: app2
+    spec:
+      containers:
+      - name: app2
+        image: ldynia/k8s-app:latest
+        ports:
+        - containerPort: 8080
+        livenessProbe:
+          httpGet:
+            path: /health/alive
+            port: 8080
+            httpHeaders:
+              - name: Host
+                value: 0.0.0.0
+          initialDelaySeconds: 5
+          periodSeconds: 3
+```
+
 
 ## HA Redis
 
